@@ -56,8 +56,8 @@ def get_sensor_locations():
 
     return sensors
 
-# --- OBTENER VALORES MEDIDOS ---
-def get_measured_data(fromDate, toDate): # el formato de fecha debe estar así: "YYYY-MM-DD"
+# --- OBTENER VALORES MEDIDOS EN RANGO DE FECHAS ---
+def get_measured_data(fromDate, toDate): # El formato de fecha debe estar así: "YYYY-MM-DD"
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
 
@@ -68,7 +68,7 @@ def get_measured_data(fromDate, toDate): # el formato de fecha debe estar así: 
     toDate = date(int(toDate[0]), int(toDate[1]), int(toDate[2]))
 
     query = ("""
-        SELECT Registro_temp.fecha, Registro_temp.hora, medida_temp, medida_humedad, medida_gas FROM Registro_temp
+        SELECT Registro_temp.fecha, Registro_temp.hora, medida_temp AS temp, medida_humedad AS humedad, medida_gas AS gas FROM Registro_temp
             INNER JOIN Registro_humedad on Registro_humedad.fecha = Registro_temp.fecha AND Registro_humedad.hora = Registro_temp.hora
             INNER JOIN Registro_gas on Registro_temp.fecha = Registro_gas.fecha AND Registro_temp.hora = Registro_gas.hora
             WHERE Registro_temp.fecha BETWEEN %s AND %s
@@ -82,11 +82,20 @@ def get_measured_data(fromDate, toDate): # el formato de fecha debe estar así: 
     rows = cursor.fetchall()
     conn.close()
 
-    data = DataFrame(rows)
+    return DataFrame(rows) # Regresa un objeto DataFrame con los registros obtenidos
 
-    return data
+# --- OBTENER PROMEDIOS DEL DATAFRAME ---
+def get_average(data): # Es preferible así porque get_measured_data es una función que toma mucho tiempo
+    return data.mean(numeric_only=True).round(2)
 
+# --- OBTENER MODAS DEL DATAFRAME ---
+def get_mode(data): # Es preferible así porque get_measured_data es una función que toma mucho tiempo
+    return data.mode(numeric_only=True).head(1)
 
+# --- OBTENER MÁXIMOS DEL DATAFRAME ---
+def get_max(data): # Es preferible así porque get_measured_data es una función que toma mucho tiempo
+    return data.max(numeric_only=True)
 
-data = get_measured_data("2025-11-26","2025-11-26")
-print(data)
+# --- OBTENER MÍNIMOS DEL DATAFRAME ---
+def get_min(data): # Es preferible así porque get_measured_data es una función que toma mucho tiempo
+    return data.min(numeric_only=True)
