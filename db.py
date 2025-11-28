@@ -90,7 +90,7 @@ def get_average(data): # Es preferible así porque get_measured_data es una func
 
 # --- OBTENER MODAS DEL DATAFRAME ---
 def get_mode(data): # Es preferible así porque get_measured_data es una función que toma mucho tiempo
-    return data.mode(numeric_only=True).head(1)
+    return data.mode(numeric_only=True).loc[0]
 
 # --- OBTENER MÁXIMOS DEL DATAFRAME ---
 def get_max(data): # Es preferible así porque get_measured_data es una función que toma mucho tiempo
