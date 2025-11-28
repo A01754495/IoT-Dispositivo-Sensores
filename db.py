@@ -53,12 +53,12 @@ def get_sensor_locations():
         else:
             print(f"ERROR en la recuperación del lugar!")
 
-    # Regresa un objeto defaultdict con las llaves del idSensor, ligadas a una lista de
+    # Regresa un diccionario con las llaves del idSensor, ligadas a una lista de
     # diccionarios con llaves coord y desc
 
     # Ejemplo de cómo recuperar los datos: get_sensor_locations()[0][0]['coord'];
     # [0] es la llave idSensor, [0] es el índice al de la lista, ['coord'] es la llave de las coordenadas
-    return sensors
+    return dict(sensors)
 
 # --- OBTENER MEDICIONES EN RANGO DE FECHAS ---
 def get_measured_data(fromDate, toDate): # El formato de fecha debe ser: YYYY-MM-DD
