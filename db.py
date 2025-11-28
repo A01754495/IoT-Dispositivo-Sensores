@@ -1,5 +1,5 @@
 import mysql.connector
-from datetime import date, time
+from datetime import date
 from pandas import DataFrame, Series
 
 # --- CONEXION SQL ---
@@ -35,29 +35,29 @@ def get_sensor_locations():
     cursor = conn.cursor(dictionary=True)
     
     cursor.execute("""
-        SELECT id_sensor, lugar 
-        FROM sensor
+        SELECT idSensor, coordenadas AS coord, descripcion AS "desc" FROM Sensor
+            INNER JOIN Lugar on Sensor.idLugar = Lugar.idLugar; 
     """)
 
     rows = cursor.fetchall()
     conn.close()
 
-    sensors = []
+    sensors = {}
     for r in rows: 
-        try: 
-            lat_str, lon_str = r["lugar"].split(",")
-            sensors.append({
-                "id_sensor": r["id_sensor"],
-                "lat": float(lat_str.strip()),
-                "lon": float(lon_str.strip())  
-            })
-        except:
-            print(f"ERROR en lugar: {r['lugar']}")
+        sensors[r['idSensor']] = []
 
+    for r in rows:
+        try:
+            sensors[r['idSensor']].append({"coord": r['coord'], "desc": r['desc']})
+        except:
+            print(f"ERROR en la recuperación del lugar!")
+
+    # Regresa un diccionario con las llaves del idSensor, ligadas a una lista de
+    # diccionarios con llaves coord y desc
     return sensors
 
-# --- OBTENER VALORES MEDIDOS EN RANGO DE FECHAS ---
-def get_measured_data(fromDate, toDate): # El formato de fecha debe estar así: "YYYY-MM-DD"
+# --- OBTENER MEDICIONES EN RANGO DE FECHAS ---
+def get_measured_data(fromDate, toDate): # El formato de fecha debe ser: YYYY-MM-DD
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
 
@@ -86,6 +86,7 @@ def get_measured_data(fromDate, toDate): # El formato de fecha debe estar así: 
 
 
 # --- FUNCIONES WRAPPER ---
+
 # --- OBTENER PROMEDIOS DEL DATAFRAME ---
 def get_average(data): # Es preferible así porque get_measured_data es una función que toma mucho tiempo
     return data.mean(numeric_only=True).round(2)
