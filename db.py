@@ -6,9 +6,9 @@ from pandas import DataFrame, Series
 def get_connection():
     return mysql.connector.connect(
         host="localhost", 
-        user="esp32",
-        password="ESP32-IoT-equipo1",
-        database="Reto"
+        user="root",
+        password="",
+        database="reto2"
     )
 
 
@@ -19,9 +19,9 @@ def get_latest_data():
 
     cursor.execute("""
         SELECT 
-            (SELECT medida_temp FROM Registro_temp ORDER BY fecha DESC, hora DESC LIMIT 1) AS temp,
-            (SELECT medida_humedad FROM Registro_humedad ORDER BY fecha DESC, hora DESC LIMIT 1) AS humedad,
-            (SELECT medida_gas FROM Registro_gas ORDER BY fecha DESC, hora DESC LIMIT 1) AS gas
+            (SELECT medida_temp FROM registro_temp ORDER BY fecha DESC, hora DESC LIMIT 1) AS temp,
+            (SELECT medida_humedad FROM registro_humedad ORDER BY fecha DESC, hora DESC LIMIT 1) AS humedad,
+            (SELECT medida_gas FROM registro_gas ORDER BY fecha DESC, hora DESC LIMIT 1) AS gas
     """)
 
     data = cursor.fetchone()
@@ -68,11 +68,11 @@ def get_measured_data(fromDate, toDate): # el formato de fecha debe estar así: 
     toDate = date(int(toDate[0]), int(toDate[1]), int(toDate[2]))
 
     query = ("""
-        SELECT Registro_temp.fecha, Registro_temp.hora, medida_temp, medida_humedad, medida_gas FROM Registro_temp
-            INNER JOIN Registro_humedad on Registro_humedad.fecha = Registro_temp.fecha AND Registro_humedad.hora = Registro_temp.hora
-            INNER JOIN Registro_gas on Registro_temp.fecha = Registro_gas.fecha AND Registro_temp.hora = Registro_gas.hora
-            WHERE Registro_temp.fecha BETWEEN %s AND %s
-            ORDER BY Registro_temp.fecha DESC, Registro_temp.hora DESC;
+        SELECT registro_temp.fecha, registro_temp.hora, medida_temp, medida_humedad, medida_gas FROM registro_temp
+            INNER JOIN registro_humedad on registro_humedad.fecha = registro_temp.fecha AND registro_humedad.hora = registro_temp.hora
+            INNER JOIN registro_gas on registro_temp.fecha = registro_gas.fecha AND registro_temp.hora = registro_gas.hora
+            WHERE registro_temp.fecha BETWEEN %s AND %s
+            ORDER BY registro_temp.fecha DESC, registro_temp.hora DESC;
     """)
     try:
         cursor.execute(query, (fromDate, toDate))
@@ -88,5 +88,5 @@ def get_measured_data(fromDate, toDate): # el formato de fecha debe estar así: 
 
 
 
-data = get_measured_data("2025-11-26","2025-11-26")
+data = get_measured_data("2025-11-25","2025-11-25")
 print(data)

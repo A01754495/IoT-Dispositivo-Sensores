@@ -41,12 +41,12 @@ st.sidebar.title("Navegación")
 
 # --- INICIALIZAR PÁGINA ---
 if "page" not in st.session_state:
-    st.session_state.page = "SkyMetrics"
+    st.session_state.page = "Descripción"
 
 
 # --- BOTONES DEL MENÚ ---
-nav_button("SkyMetrics")
 nav_button("Descripción")
+nav_button("SkyMetrics")
 nav_button("Calendario")
 nav_button("Modelo E-R")
 nav_button("Equipo")
