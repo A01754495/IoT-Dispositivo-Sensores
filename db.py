@@ -1,6 +1,6 @@
 import mysql.connector
 from datetime import date
-from pandas import DataFrame, Series
+from pandas import DataFrame
 from collections import defaultdict
 
 # --- CONEXION SQL ---
