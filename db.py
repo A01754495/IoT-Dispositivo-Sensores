@@ -1,6 +1,7 @@
 import mysql.connector
 from datetime import date
 from pandas import DataFrame, Series
+from collections import defaultdict
 
 # --- CONEXION SQL ---
 def get_connection():
@@ -42,18 +43,21 @@ def get_sensor_locations():
     rows = cursor.fetchall()
     conn.close()
 
-    sensors = {}
-    for r in rows: 
-        sensors[r['idSensor']] = []
-
-    for r in rows:
-        try:
-            sensors[r['idSensor']].append({"coord": r['coord'], "desc": r['desc']})
-        except:
+    sensors = defaultdict(list)
+    for row in rows:
+        if 'idSensor' in row and 'coord' in row and 'desc' in row:
+            sensors[row['idSensor']].append({
+                "coord": row['coord'], 
+                "desc": row['desc']
+            })
+        else:
             print(f"ERROR en la recuperación del lugar!")
 
-    # Regresa un diccionario con las llaves del idSensor, ligadas a una lista de
+    # Regresa un objeto defaultdict con las llaves del idSensor, ligadas a una lista de
     # diccionarios con llaves coord y desc
+
+    # Ejemplo de cómo recuperar los datos: get_sensor_locations()[0][0]['coord'];
+    # [0] es la llave idSensor, [0] es el índice al de la lista, ['coord'] es la llave de las coordenadas
     return sensors
 
 # --- OBTENER MEDICIONES EN RANGO DE FECHAS ---
