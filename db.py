@@ -84,6 +84,8 @@ def get_measured_data(fromDate, toDate): # El formato de fecha debe estar así: 
 
     return DataFrame(rows) # Regresa un objeto DataFrame con los registros obtenidos
 
+
+# --- FUNCIONES WRAPPER ---
 # --- OBTENER PROMEDIOS DEL DATAFRAME ---
 def get_average(data): # Es preferible así porque get_measured_data es una función que toma mucho tiempo
     return data.mean(numeric_only=True).round(2)
