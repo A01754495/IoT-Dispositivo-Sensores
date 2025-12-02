@@ -1,5 +1,5 @@
 import mysql.connector
-from datetime import date
+from datetime import date, time, datetime
 from pandas import DataFrame
 from collections import defaultdict
 
@@ -7,9 +7,9 @@ from collections import defaultdict
 def get_connection():
     return mysql.connector.connect(
         host="localhost", 
-        user="root",
-        password="",
-        database="reto2"
+        user="esp32",
+        password="ESP32-IoT-equipo1",
+        database="Reto"
     )
 
 
@@ -61,7 +61,7 @@ def get_sensor_locations():
     return dict(sensors)
 
 # --- OBTENER MEDICIONES EN RANGO DE FECHAS ---
-def get_measured_data(fromDate, toDate): # El formato de fecha debe ser: YYYY-MM-DD
+def get_measured_data(fromDate, toDate):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
 
@@ -72,11 +72,11 @@ def get_measured_data(fromDate, toDate): # El formato de fecha debe ser: YYYY-MM
     #toDate = date(int(toDate[0]), int(toDate[1]), int(toDate[2]))
 
     query = ("""
-        SELECT registro_temp.fecha, registro_temp.hora, medida_temp AS temp, medida_humedad AS humedad, medida_gas AS gas FROM registro_temp
-            INNER JOIN registro_humedad on registro_humedad.fecha = registro_temp.fecha AND registro_humedad.hora = registro_temp.hora
-            INNER JOIN registro_gas on registro_temp.fecha = registro_gas.fecha AND registro_temp.hora = registro_gas.hora
-            WHERE registro_temp.fecha BETWEEN %s AND %s
-            ORDER BY registro_temp.fecha DESC, registro_temp.hora DESC;
+        SELECT Registro_temp.fecha, Registro_temp.hora, medida_temp AS temp, medida_humedad AS humedad, medida_gas AS gas FROM Registro_temp
+            INNER JOIN Registro_humedad on Registro_humedad.fecha = Registro_temp.fecha AND Registro_humedad.hora = Registro_temp.hora
+            INNER JOIN Registro_gas on Registro_temp.fecha = Registro_gas.fecha AND Registro_temp.hora = Registro_gas.hora
+            WHERE Registro_temp.fecha BETWEEN %s AND %s
+            ORDER BY Registro_temp.fecha ASC, Registro_temp.hora ASC;
     """)
     try:
         cursor.execute(query, (fromDate, toDate))
@@ -88,6 +88,33 @@ def get_measured_data(fromDate, toDate): # El formato de fecha debe ser: YYYY-MM
 
     return DataFrame(rows) # Regresa un objeto DataFrame con los registros obtenidos
 
+# --- OBTENER MEDICIONES EN RANGO DE FECHAS ---
+# --- HACE CAST A LAS FECHAS Y HORAS A DATETIME ---
+def get_measured_data_castdatetime(fromDate, toDate):
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    fromDate = fromDate.strftime("%Y-%m-%d")
+    toDate = toDate.strftime("%Y-%m-%d")
+
+    query = ("""
+        SELECT STR_TO_DATE(CONCAT(Registro_temp.fecha, ' ', Registro_temp.hora), '%Y-%m-%d %H:%i:%s') AS fechaHora,
+            medida_temp AS temp, medida_humedad AS humedad, medida_gas AS gas FROM Registro_temp
+            INNER JOIN Registro_humedad on Registro_humedad.fecha = Registro_temp.fecha AND Registro_humedad.hora = Registro_temp.hora
+            INNER JOIN Registro_gas on Registro_temp.fecha = Registro_gas.fecha AND Registro_temp.hora = Registro_gas.hora
+            WHERE Registro_temp.fecha BETWEEN '{0}' AND '{1}'
+            ORDER BY Registro_temp.fecha ASC, Registro_temp.hora ASC;
+    """).format(fromDate, toDate)
+
+    try:
+        cursor.execute(query)
+    except:
+        print(f"ERROR en el rango de fechas!")
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    return DataFrame(rows) # Regresa un objeto DataFrame con los registros obtenidos 
 
 # --- FUNCIONES WRAPPER ---
 

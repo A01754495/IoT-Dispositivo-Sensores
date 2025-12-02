@@ -27,124 +27,66 @@ def render_skymetrics():
     ## Mapa
     st.markdown("### 🌍 Mapa de sensores")
 
-    # sensors = get_sensor_locations()
-    # if not sensors: 
-    #     st.warning("No hay ubicaciones")
-    #     return 
+    sensors = get_sensor_locations()
+    if not sensors: 
+        st.warning("No hay ubicaciones")
+        return 
     
-    # # Centrar mapa en la primera posición
-    # first = sensors[0]
-    # m = folium.Map(location=[first["lat"], first["lon"]], zoom_start=13)
+    # Centrar mapa en la primera posición
+    first = sensors[0]
+    m = folium.Map(location=[first["lat"], first["lon"]], zoom_start=13)
 
-    # # LISTA de coordenadas para dibujar la ruta
-    # route = []
+    # LISTA de coordenadas para dibujar la ruta
+    route = []
 
-    # for s in sensors:
-    #     route.append([s["lat"], s["lon"]])
+    for s in sensors:
+        route.append([s["lat"], s["lon"]])
 
-    #     folium.Marker(
-    #         [s["lat"], s["lon"]],
-    #         popup=f"""
-    #             <b>Sensor:</b> {s['id_sensor']}<br>
-    #             <b>Lat:</b> {s['lat']}<br>
-    #             <b>Lon:</b> {s['lon']}<br>
-    #         """,
-    #         icon=DivIcon(
-    #             icon_size=(40,40),
-    #             icon_anchor=(20,20),
-    #             html=f'''
-    #             <div style="
-    #                 background-color:#003333;
-    #                 width:40px;
-    #                 height:40px;
-    #                 border-radius:50%;
-    #                 display:flex;
-    #                 align-items:center;
-    #                 justify-content:center;
-    #                 font-size:22px;
-    #                 color:white;
-    #                 box-shadow:0px 0px 8px #1F6FEBAA;
-    #                 border:2px solid white;
-    #             ">
-    #                 📡
-    #             </div>
-    #             '''
-    #         )
-    #     ).add_to(m)
+        folium.Marker(
+            [s["lat"], s["lon"]],
+            popup=f"""
+                <b>Sensor:</b> {s['id_sensor']}<br>
+                <b>Lat:</b> {s['lat']}<br>
+                <b>Lon:</b> {s['lon']}<br>
+            """,
+            icon=DivIcon(
+                icon_size=(40,40),
+                icon_anchor=(20,20),
+                html=f'''
+                <div style="
+                    background-color:#003333;
+                    width:40px;
+                    height:40px;
+                    border-radius:50%;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    font-size:22px;
+                    color:white;
+                    box-shadow:0px 0px 8px #1F6FEBAA;
+                    border:2px solid white;
+                ">
+                    📡
+                </div>
+                '''
+            )
+        ).add_to(m)
 
-    # # DIBUJAR RUTA EN EL MAPA
-    # folium.PolyLine(
-    #     route,
-    #     color="purple",
-    #     weight=4,
-    #     opacity=0.8
-    # ).add_to(m)
+    # DIBUJAR RUTA EN EL MAPA
+    folium.PolyLine(
+        route,
+        color="purple",
+        weight=4,
+        opacity=0.8
+    ).add_to(m)
 
-    # st_folium(m, width=900, height=500)
+    st_folium(m, width=900, height=500)
 
 
 # --- SECCIÓN DESCRIPCIÓN ---
 def render_inicio():
-    st.title("Descripción del proyecto")
-
-    # --- DESCRIPCIÓN ---#
-    st.subheader("**¿En qué consiste?**")
-    col1, col2 = st.columns([2, 1]) # izquieda más grande que la derecha 
-    with col1: 
-        st.markdown(""" Este proyecto consiste en diseñar e implementar un sistema para la adquisición, procesamiento y
-                visualización de datos amientales en tiempo real, utilizando una estación de monitoreo basadas 
-                en el microcontrolador ESP32. La estación estará equipada como 2 sensores capaces de registrar 
-                la temperatura, humedad y concentración de gases. La información recolectada será enviada mediante 
-                conexión WiFi a una base de datos MySQL, encargada de almacenar y organizar los datos generados.""")
-        st.markdown("""Además, se desarrolló una interfaz de usuario que permita visualizar los registros de manera clara
-                e intuitiva, optimizando la comprensión y el acceso a la información desde computadoras y dispositivos móviles.""")
-        st.subheader("**Necesidad**")
-        st.markdown(""" Este proyecto consiste en diseñar e implementar un sistema para la adquisición, procesamiento y
-                visualización de datos amientales en tiempo real, utilizando una estación de monitoreo basadas 
-                en el microcontrolador ESP32. La estación estará equipada como 2 sensores capaces de registrar 
-                la temperatura, humedad y concentración de gases. La información recolectada será enviada mediante 
-                conexión WiFi a una base de datos MySQL, encargada de almacenar y organizar los datos generados.""")
-    with col2: 
-        st.image("estacion.jpg", caption = "Estación meteorológica Equipo 1", width=350)
-
-    
-    st.subheader("**Beneficios**")
-    st.markdown("""- Adquirir comprensión integral del proceso que implica el diseño y la implementación de una base de datos funcional.
-- Reforzar las habilidades en programación, gestión de datos, conexión de hardware, análisis de información en tiempo real, 
-trabajo en equipo y organización de proyectos
-- Entendimiento profundo sobre el uso de tecnologías de diversas áreas, trabajando en conjunto para crear aplicaciones funcionales
-- Fomentar la conciencia sobre la importancia de la calidad de aire y el impacto del entorno en la vida cotidiana""")
-    
-    st.subheader("**Recursos Materiales**")
-    st.markdown("""- Computadoras con sistema operativo de uso general como Windows, MacOS o Linux
-- ESP32
-- Sensores DHT11 (humedad y temperatura) y MQ2 (gases)
-- Componentes electrónicos (jumpers, cables, protoboard y pila)
-- Contenedor acrílico para resguardar la estación meteorológica """)
-    col1, col2 = st.columns([1, 2]) # izquieda más grande que la derecha 
-    with col1: 
-        st.subheader("**Recursos Digitales**")
-        st.markdown("""- Software Arduino, junto con sus bibliotecas y controladores para el ESP32 y los sensores
-- Software XAMPP
-- Implementación del lenguaje de programación Python y algún editor/IDE que soporte notebooks Jupyter
-- Licencias de estudiante de Microsoft Power BI
-- Software de administración de proyectos como GanttProject
-- Accesibilidad a servidores de base de datos
-- Servicio de procesamiento de eventos (Azure Event Hubs)""")
-        
-    with col2: 
-        st.image("rec_digitales.png", width=900)
-    
-    st.subheader("**Tabla de Inversión**")
-    costos = {
-        "Componente": ["Kit de electrónica", "ESP32", "Batería recargable", "Contenedor de acrílico"],
-        "Costo $MXN (IVA incluido)": [954, 184, 159, 200]
-    }
-
-    df_costos = pd.DataFrame(costos) #organización de datos en filas y columnas 
-    st.dataframe(df_costos, hide_index=True, width=600) #tabla interactiva y no muestra los índices
-
-    st.markdown("""**Total de inversión aproximada:** $1,865 MXN (IVA incluido)""")
+    st.title("Descripción")
+    st.write("Página de bienvenida del sistema.")
 
 
 # --- SECCIÓN CALENDARIO ---
