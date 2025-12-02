@@ -4,9 +4,9 @@ import pandas as pd
 import folium
 
 from streamlit_folium import st_folium
-from db import get_latest_data, get_sensor_locations
+from db import get_latest_data, get_sensor_locations, get_connection, get_measured_data, get_average, get_mode, get_min, get_max
 from folium.features import DivIcon
-from datetime import datetime, timedelta, date
+from datetime import date, timedelta
 
 # --- NAVEGACIÓN BOTONES ---
 def nav_button(name):
@@ -153,178 +153,167 @@ def render_calendario():
     st.write("Selecciona una fecha o un rango de fechas directamente en el calendario:")
 
     # --- CALENDARIO SIEMPRE VISIBLE ---
-    fecha = st.date_input(
-        "Calendario",
-        value=[datetime.date.today()],
-        min_value=datetime.date(2024, 1, 1),
-        max_value=datetime.date.today(),
-        format="YYYY-MM-DD"
+    modo = st.radio(
+        "Modo de selección:",
+        ["Un solo día", "Rango de fechas"],
+        horizontal=True
     )
 
+    if modo == "Un solo día":
+        fecha = st.date_input("Selecciona una fecha:", value=date.today())
+        fecha_inicio = fecha
+        fecha_fin = fecha
+    else:
+        rango = st.date_input(
+            "Selecciona un rango de fechas:",
+            value=(date.today() - timedelta(days=2), date.today())
+        )
+        if len(rango) == 1:
+            fecha_inicio = rango[0]
+            fecha_fin = rango[0]
+        else:
+            fecha_inicio = rango[0]
+            fecha_fin = rango[1]
+
     st.markdown("---")
 
-    # -------------------------------
-    #      INTERPRETAR SELECCIÓN
-    # -------------------------------
-    if isinstance(fecha, list) and len(fecha) == 2:
-        # RANGO DE FECHAS
-        fecha_inicio, fecha_fin = fecha
-        st.subheader(f"📆 Registros del {fecha_inicio} al {fecha_fin}")
-
-        modo = "rango"
-
-    elif isinstance(fecha, list) and len(fecha) == 1:
-        # SOLO UN DÍA
-        fecha = fecha[0]
-        st.subheader(f"📆 Registros del {fecha}")
-
-        modo = "dia"
-
-    else:
-        st.warning("Selecciona una fecha válida.")
+    # --- Obtener datos desde la DB ---
+    df = get_measured_data(fecha_inicio, fecha_fin)
+    if df.empty:
+        st.warning("No hay registros para la fecha o rango seleccionado.")
         return
 
-    # -------------------------------------
-    #   AQUÍ VA LA CONSULTA SQL REAL
-    # -------------------------------------
-    # Por ahora te meto datos de ejemplo:
-    registros = pd.DataFrame({
-        "hora": ["08:00", "09:30", "11:15", "14:20", "17:10"],
-        "temperatura": [22, 23, 24, 26, 21],
-        "humedad": [60, 58, 55, 52, 59],
-        "gas": [200, 180, 195, 210, 205]
-    }).sort_values("hora")
+    # Ordenar por fecha y hora
+    df = df.sort_values(["fecha", "hora"]).reset_index(drop=True)
 
-    # -------------------------------------
-    #       MOSTRAR REGISTROS
-    # -------------------------------------
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.markdown("### 🌡️ Temperatura")
-        for _, r in registros.iterrows():
-            st.markdown(
-                f"<div style='padding:10px;background:#1f2937;border-radius:10px;margin-bottom:6px;'>"
-                f"<strong>{r['hora']}</strong> — {r['temperatura']} °C</div>",
-                unsafe_allow_html=True
-            )
-
-    with col2:
-        st.markdown("### 💧 Humedad")
-        for _, r in registros.iterrows():
-            st.markdown(
-                f"<div style='padding:10px;background:#113a5f;border-radius:10px;margin-bottom:6px;'>"
-                f"<strong>{r['hora']}</strong> — {r['humedad']} %</div>",
-                unsafe_allow_html=True
-            )
-
-    with col3:
-        st.markdown("### 🧪 Gas")
-        for _, r in registros.iterrows():
-            st.markdown(
-                f"<div style='padding:10px;background:#3f1e5f;border-radius:10px;margin-bottom:6px;'>"
-                f"<strong>{r['hora']}</strong> — {r['gas']} ppm</div>",
-                unsafe_allow_html=True
-            )
-
-    st.markdown("---")
-
-    st.markdown("### Promedio")
-    ## Datos reales
-    data = get_latest_data()
-
-    temperatura = data["temp"]
-    humedad = data["humedad"]
-    gas = data["gas"]
-
-    ## Tarjetas
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric("🌡️ Temperatura", f"{temperatura} °C")
-
-    with col2:
-        st.metric("💧 Humedad", f"{humedad} %")
-
-    with col3:
-        st.metric("🧪 Gas", f"{gas} ppm")
-
-    st.markdown("---")
+    # 1. Asegurar que 'fecha' se interprete como objeto datetime.date
+    #    Si la DB devuelve un Timedelta o cadena extraña, esto la limpia a un objeto de fecha/hora.
+    #    Usamos errors='coerce' por si hay algún valor nulo o inválido en la DB, aunque no es ideal.
+    df["fecha"] = pd.to_datetime(df["fecha"], errors='coerce').dt.normalize()
     
-    st.markdown("### Moda")
-    ## Datos reales
-    data = get_latest_data()
-
-    temperatura = data["temp"]
-    humedad = data["humedad"]
-    gas = data["gas"]
-
-    ## Tarjetas
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric("🌡️ Temperatura", f"{temperatura} °C")
-
-    with col2:
-        st.metric("💧 Humedad", f"{humedad} %")
-
-    with col3:
-        st.metric("🧪 Gas", f"{gas} ppm")
-
-    st.markdown("---")
+    # 2. Crear la columna datetime para gráficas. 
+    #    Usamos .dt.strftime() para obtener una cadena de FECHA limpia ('YYYY-MM-DD').
+    #    Esto evita que se añadan los indeseados '0 days' o residuos de Timedelta.
+    fecha_str = df["fecha"].dt.strftime('%Y-%m-%d')
+    hora_str = df["hora"].astype(str)
     
-    st.markdown("### Mínimo")
-    ## Datos reales
-    data = get_latest_data()
+    # 3. Combina y convierte la cadena resultante a un objeto datetime final
+    df["fecha_hora"] = pd.to_datetime(fecha_str + " " + hora_str)
 
-    temperatura = data["temp"]
-    humedad = data["humedad"]
-    gas = data["gas"]
-
-    ## Tarjetas
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric("🌡️ Temperatura", f"{temperatura} °C")
-
-    with col2:
-        st.metric("💧 Humedad", f"{humedad} %")
-
-    with col3:
-        st.metric("🧪 Gas", f"{gas} ppm")
-
-    st.markdown("---")
+    st.subheader("🌡️ Temperatura")
+    st.line_chart(df.set_index("fecha_hora")["temp"])
     
-    st.markdown("### Máximo")
-    ## Datos reales
-    data = get_latest_data()
-
-    temperatura = data["temp"]
-    humedad = data["humedad"]
-    gas = data["gas"]
-
-    ## Tarjetas
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric("🌡️ Temperatura", f"{temperatura} °C")
-
-    with col2:
-        st.metric("💧 Humedad", f"{humedad} %")
-
-    with col3:
-        st.metric("🧪 Gas", f"{gas} ppm")
+    st.subheader("💧 Humedad")
+    st.line_chart(df.set_index("fecha_hora")["humedad"])
+    
+    st.subheader("🧪 Gas")
+    st.line_chart(df.set_index("fecha_hora")["gas"])
 
     st.markdown("---")
+
+    # --- Calcular estadísticas ---
+    avg = get_average(df)
+    mode = get_mode(df)
+    minv = get_min(df)
+    maxv = get_max(df)
+
+    st.subheader("📊 Estadísticas del periodo seleccionado")
+
+    # --- Tarjetas en fila de 4 columnas ---
+    col_prom, col_moda, col_min, col_max = st.columns(4)
+
+    # Promedio
+    with col_prom:
+        st.metric("🌡️ Temp Promedio", f"{avg['temp']} °C")
+        st.metric("💧 Humedad Promedio", f"{avg['humedad']} %")
+        st.metric("🧪 Gas Promedio", f"{avg['gas']} ppm")
+
+    # Moda
+    with col_moda:
+        st.metric("🌡️ Temp Moda", f"{mode['temp']} °C")
+        st.metric("💧 Humedad Moda", f"{mode['humedad']} %")
+        st.metric("🧪 Gas Moda", f"{mode['gas']} ppm")
+
+    # Mínimo
+    with col_min:
+        st.metric("🌡️ Temp Mínimo", f"{minv['temp']} °C")
+        st.metric("💧 Humedad Mínimo", f"{minv['humedad']} %")
+        st.metric("🧪 Gas Mínimo", f"{minv['gas']} ppm")
+
+    # Máximo
+    with col_max:
+        st.metric("🌡️ Temp Máximo", f"{maxv['temp']} °C")
+        st.metric("💧 Humedad Máximo", f"{maxv['humedad']} %")
+        st.metric("🧪 Gas Máximo", f"{maxv['gas']} ppm")
 
 
 # --- SECCIÓN MODELO E-R ---
 def render_modelo_er():
     st.title("Modelo E-R")
-    st.write("Aquí mostraremos el diagrama entidad-relación.")
+    st.write("Aquí mostraremos el diagrama Entidad-Relación.")
 
 
 # --- SECCIÓN EQUIPO ---
 def render_equipo():
     st.title("Equipo")
-    st.write("Camila — Regina — Ian")
+    st.write("Conoce a los miembros detrás de este proyecto y sus contribuciones")
+    st.markdown("---")
+
+    st.header("Integrantes del Proyecto")
+
+    # --- Miembro 1: Camila ---
+    st.subheader("Camila Trejo")
+    col1, col2 = st.columns([1, 2]) # Columna para imagen y otra para texto
+    with col1:
+        # Reemplaza 'camila_foto.jpg' con la ruta real de la foto de Camila
+        st.image("camila_foto.jpg", caption="Camila", width=200)
+    with col2:
+        st.markdown(""""
+            - **Carrera:** Ingeniería en Robótica y Sistemas Digitales  
+            - **Semestre:** 3er Semestre  
+            - **Rol en el Proyecto:** Líder y Desarrolladora Backend
+            - "..." """)
+    st.markdown("---")
+
+    # --- Miembro 2: Regina ---
+    st.subheader("Regina Hernández")
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        # Reemplaza 'regina_foto.jpg' con la ruta real de la foto de Regina
+        st.image("regina_foto.jpg", caption="Regina", width=200)
+    with col2:
+        st.markdown(f"""
+            - **Carrera:** Ingeniería en Tecnologías Computacionales  
+            - **Semestre:** 3er Semestre  
+            - **Rol en el Proyecto:** Integración de Hardware y Análisis de Datos
+            - "..." """)
+    st.markdown("---")
+
+    # --- Miembro 3: Ian ---
+    st.subheader("Ian Morgado")
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        # Reemplaza 'ian_foto.jpg' con la ruta real de la foto de Ian
+        st.image("ian_foto.jpg", caption="Ian", width=200)
+    with col2:
+        st.markdown(f"""
+            - **Carrera:** Ingeniería en Tecnologías Computacionales  
+            - **Semestre:** 3er Semestre  
+            - **Rol en el Proyecto:** Integración de Hardware & Programador principal
+            - "..." """)
+    st.markdown("---")
+
+    st.header("Momentos del Equipo")
+    # --- Foto Grupal ---
+    st.subheader("Equipo en acción")
+    # Reemplaza 'equipo_grupal.jpg' con la ruta real de la foto grupal
+    st.image("equipo_grupal.jpg", caption="El equipo trabajando en SkyMetrics", use_column_width=True)
+    st.markdown("---")
+
+    st.header("Actividades y Cronograma del Proyecto")
+    # --- Imagen de Actividades ---
+    st.subheader("Diagrama de Actividades")
+    # Reemplaza 'actividades_proyecto.png' con la ruta real de la imagen de actividades
+    st.image("actividades_proyecto.png", caption="Visión general de las actividades preliminares del proyecto", use_column_width=True)
+    st.markdown("---")
+

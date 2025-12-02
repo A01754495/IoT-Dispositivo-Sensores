@@ -9,7 +9,7 @@ import folium
 from streamlit_folium import st_folium
 from db import get_latest_data
 from secciones import nav_button, render_skymetrics, render_inicio, render_calendario, render_inicio, render_calendario, render_modelo_er, render_equipo
-
+from datetime import date, timedelta
 
 # --- DISEÑO DE LA PESTAÑA ---
 st.set_page_config(
@@ -41,7 +41,7 @@ st.sidebar.title("Navegación")
 
 # --- INICIALIZAR PÁGINA ---
 if "page" not in st.session_state:
-    st.session_state.page = "Descripción"
+    st.session_state.page = "Calendario"
 
 
 # --- BOTONES DEL MENÚ ---

@@ -36,8 +36,8 @@ def get_sensor_locations():
     cursor = conn.cursor(dictionary=True)
     
     cursor.execute("""
-        SELECT idSensor, coordenadas AS coord, descripcion AS "desc" FROM Sensor
-            INNER JOIN Lugar on Sensor.idLugar = Lugar.idLugar; 
+        SELECT idSensor, coordenadas AS coord, descripcion AS "desc" FROM sensor
+            INNER JOIN lugar on sensor.idLugar = lugar.idLugar; 
     """)
 
     rows = cursor.fetchall()
@@ -65,26 +65,18 @@ def get_measured_data(fromDate, toDate): # El formato de fecha debe ser: YYYY-MM
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
 
-    fromDate = fromDate.split("-")
-    fromDate = date(int(fromDate[0]), int(fromDate[1]), int(fromDate[2]))
+    #fromDate = fromDate.split("-")
+    #fromDate = date(int(fromDate[0]), int(fromDate[1]), int(fromDate[2]))
 
-    toDate = toDate.split("-")
-    toDate = date(int(toDate[0]), int(toDate[1]), int(toDate[2]))
+    #toDate = toDate.split("-")
+    #toDate = date(int(toDate[0]), int(toDate[1]), int(toDate[2]))
 
     query = ("""
-<<<<<<< HEAD
-        SELECT registro_temp.fecha, registro_temp.hora, medida_temp, medida_humedad, medida_gas FROM registro_temp
+        SELECT registro_temp.fecha, registro_temp.hora, medida_temp AS temp, medida_humedad AS humedad, medida_gas AS gas FROM registro_temp
             INNER JOIN registro_humedad on registro_humedad.fecha = registro_temp.fecha AND registro_humedad.hora = registro_temp.hora
             INNER JOIN registro_gas on registro_temp.fecha = registro_gas.fecha AND registro_temp.hora = registro_gas.hora
             WHERE registro_temp.fecha BETWEEN %s AND %s
             ORDER BY registro_temp.fecha DESC, registro_temp.hora DESC;
-=======
-        SELECT Registro_temp.fecha, Registro_temp.hora, medida_temp AS temp, medida_humedad AS humedad, medida_gas AS gas FROM Registro_temp
-            INNER JOIN Registro_humedad on Registro_humedad.fecha = Registro_temp.fecha AND Registro_humedad.hora = Registro_temp.hora
-            INNER JOIN Registro_gas on Registro_temp.fecha = Registro_gas.fecha AND Registro_temp.hora = Registro_gas.hora
-            WHERE Registro_temp.fecha BETWEEN %s AND %s
-            ORDER BY Registro_temp.fecha DESC, Registro_temp.hora DESC;
->>>>>>> 6120869537e17a20ed63e845be749322b407cc82
     """)
     try:
         cursor.execute(query, (fromDate, toDate))
@@ -99,10 +91,6 @@ def get_measured_data(fromDate, toDate): # El formato de fecha debe ser: YYYY-MM
 
 # --- FUNCIONES WRAPPER ---
 
-<<<<<<< HEAD
-data = get_measured_data("2025-11-25","2025-11-25")
-print(data)
-=======
 # --- OBTENER PROMEDIOS DEL DATAFRAME ---
 def get_average(data): # Es preferible así porque get_measured_data es una función que toma mucho tiempo
     return data.mean(numeric_only=True).round(2)
@@ -118,4 +106,3 @@ def get_max(data): # Es preferible así porque get_measured_data es una función
 # --- OBTENER MÍNIMOS DEL DATAFRAME ---
 def get_min(data): # Es preferible así porque get_measured_data es una función que toma mucho tiempo
     return data.min(numeric_only=True)
->>>>>>> 6120869537e17a20ed63e845be749322b407cc82
