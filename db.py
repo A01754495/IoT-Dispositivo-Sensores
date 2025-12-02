@@ -46,7 +46,7 @@ def get_sensor_locations():
     sensors_list = []
 
     for row in rows:
-        # La columna 'coordenadas' tiene el formato "latitud, longitud" (ej: "19.597..., -99.277...")
+        # La columna 'coordenadas' tiene el formato "latitud, longitud"
         # Debemos separar esta cadena en dos números flotantes
         try:
             # Asegúrate de que las coordenadas se separen por coma y espacio, o solo coma

@@ -77,10 +77,9 @@ def render_skymetrics():
 # --- SECCIÓN DESCRIPCIÓN ---
 def render_inicio():
     st.title("Descripción del proyecto")
-
-    # --- DESCRIPCIÓN ---#
     st.subheader("**¿En qué consiste?**")
     col1, col2 = st.columns([2, 1]) # izquieda más grande que la derecha 
+
     with col1: 
         st.markdown(""" Este proyecto consiste en diseñar e implementar un sistema para la adquisición, procesamiento y
                 visualización de datos amientales en tiempo real, utilizando una estación de monitoreo basadas 
@@ -112,7 +111,7 @@ trabajo en equipo y organización de proyectos
 - Sensores DHT11 (humedad y temperatura) y MQ2 (gases)
 - Componentes electrónicos (jumpers, cables, protoboard y pila)
 - Contenedor acrílico para resguardar la estación meteorológica """)
-    col1, col2 = st.columns([1, 2]) # izquieda más grande que la derecha 
+    col1, col2 = st.columns([1, 2])
     with col1: 
         st.subheader("**Recursos Digitales**")
         st.markdown("""- Software Arduino, junto con sus bibliotecas y controladores para el ESP32 y los sensores
@@ -143,7 +142,7 @@ def render_calendario():
     st.title("Calendario")
     st.write("Selecciona una fecha o un rango de fechas directamente en el calendario:")
 
-    # --- CALENDARIO SIEMPRE VISIBLE ---
+    # Para la selección de un solo día o rango de día
     modo = st.radio(
         "Modo de selección:",
         ["Un solo día", "Rango de fechas"],
@@ -168,14 +167,14 @@ def render_calendario():
 
     st.markdown("---")
 
-    # 1. CAMBIO CRUCIAL: Usar la función que devuelve el DATETIME ya unido
+    # Usar la función que devuelve el DATETIME ya unido
     df = get_measured_data_castdatetime(fecha_inicio, fecha_fin) 
     
     if df.empty:
         st.warning("No hay registros para la fecha o rango seleccionado.")
         return
 
-        # --- Calcular estadísticas ---
+    # Calular estadísticas
     avg = get_average(df)
     mode = get_mode(df)
     minv = get_min(df)
@@ -183,7 +182,7 @@ def render_calendario():
 
     st.subheader("Estadísticas")
 
-    # --- LEYENDA DE COLORES ---
+    # Leyenda para los colores e identificar temperatura, humedad y gas 
     legend_html = f"""
     <div style="font-size: 14px; margin-top: -10px; margin-bottom: 20px;">
         <span class='legend-box metric-temp'></span> Temperatura
@@ -193,11 +192,10 @@ def render_calendario():
     """
     st.markdown(legend_html, unsafe_allow_html=True)
 
-    # 2. Promedio (Fila 1)
     st.markdown("#### Promedio")
-    # 1. Definir 3 Columnas: Temperatura, Humedad, Gas
+    # Definir 3 Columnas: Temperatura, Humedad, Gas
     col_temp, col_humedad, col_gas = st.columns(3)
-    # 2. Asignamos la métrica a cada columna
+    # Asignamos la métrica a cada columna
     with col_temp:
     # Usamos la clase CSS 'metric-temp'
         st.markdown(f'<div class="metric-container metric-temp"><div class="metric-value">{avg["temp"]:.2f} °C</div></div>', unsafe_allow_html=True)
@@ -210,8 +208,6 @@ def render_calendario():
         
 
     st.markdown("#### Moda")
-    # Redefinimos las columnas para cada operación para asegurar la alineación, 
-    # aunque es un poco redundante, es la forma más segura en Streamlit.
     col_temp, col_humedad, col_gas = st.columns(3) 
 
     with col_temp:
@@ -245,8 +241,8 @@ def render_calendario():
 
     st.markdown("---")
 
-    # 2. SIMPLIFICACIÓN: La columna ya viene limpia y combinada como 'fechaHora'.
-    # Solo la establecemos como índice para los gráficos.
+    # La columna ya viene limpia y combinada como fechaHora.
+    # Establecemos como índice fechaHora para los gráficos.
     df_plot = df.set_index("fechaHora")
     st.subheader("Gráficas")
 
@@ -275,77 +271,69 @@ def render_modelo_er():
 def render_equipo():
     st.title("Equipo")
     st.write("Conoce a los miembros detrás de este proyecto y sus contribuciones")
-    st.markdown("---")
-
     col_cam, col_regi, col_ia = st.columns(3) 
-    # --- Miembro 1: Camila ---
+
     with col_cam: 
         st.subheader("Camila Trejo")
         
-        # 🚨 SOLUCIÓN: Contenedor para CENTRAR todos los elementos
+        # Contenedor para CENTRAR todos los elementos
         st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
         
-        # 1. Muestra la imagen (se centra dentro del <div>)
+        # Muestra la imagen (se centra dentro del <div>)
         st.image("camila_.jpg", caption=None, width=200)
 
-        # 2. Muestra el texto formateado (el caption)
-        # Usamos HTML para los saltos de línea y el centrado se aplica al <div> padre.
+        # Muestra el texto formateado (el caption)
+        # Usamos HTML para los saltos de línea
         caption_html = f"""
         <div style="font-size: 14px; margin-top: 5px;">
             <b>Carrera:</b> IRS <br>
             <b>Semestre:</b> 3er Semestre <br>
             <b>Rol:</b> Líder y Desarrolladora Frontend <br> 
-            <b>"..."</b>
+            <b>"A Sky Full of Stars - Coldplay"</b>
         </div>
         """
         st.markdown(caption_html, unsafe_allow_html=True)
         
         # Cierre del contenedor de centrado
         st.markdown('</div>', unsafe_allow_html=True)
+
+    with col_regi:
+        st.subheader("Regina Hernández")
+        st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+        # st.image("regi_.jpg", caption=None, width=200)
+
+        caption_html = f"""
+        <div style="font-size: 14px; margin-top: 5px;">
+            <b>Carrera:</b> ITC <br>
+            <b>Semestre:</b> 3er Semestre <br>
+            <b>Rol:</b> Encargada de electrónica <br> 
+            <b>"..."</b>
+        </div>
+        """
+        st.markdown(caption_html, unsafe_allow_html=True)
+
+        st.markdown('</div>', unsafe_allow_html=True)
         
-    # --- Miembro 2 y 3 (seguirían el mismo patrón de centrado) ---
+    with col_ia:
+        st.subheader("Ian Morgado")
+        st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+        st.image("ian_.jpg", caption=None, width=300)
 
-    st.markdown("---")
+        caption_html = f"""
+        <div style="font-size: 14px; margin-top: 5px;">
+            <b>Carrera:</b> ITC <br>
+            <b>Semestre:</b> 3er Semestre <br>
+            <b>Rol:</b> Encargada de electrónica <br> 
+            <b>"..."</b>
+        </div>
+        """
+        st.markdown(caption_html, unsafe_allow_html=True)
 
-    # --- Miembro 2: Regina ---
-    # st.subheader("Regina Hernández")
-    # col1, col2 = st.columns([1, 2])
-    # with col1:
-    #     # Reemplaza 'regina_foto.jpg' con la ruta real de la foto de Regina
-    #     st.image("regina_foto.jpg", caption="Regina", width=200)
-    # with col2:
-    #     st.markdown(f"""
-    #         - **Carrera:** Ingeniería en Tecnologías Computacionales  
-    #         - **Semestre:** 3er Semestre  
-    #         - **Rol en el Proyecto:** Integración de Hardware y Análisis de Datos
-    #         - "..." """)
-    # st.markdown("---")
-
-    # # --- Miembro 3: Ian ---
-    # st.subheader("Ian Morgado")
-    # col1, col2 = st.columns([1, 2])
-    # with col1:
-    #     # Reemplaza 'ian_foto.jpg' con la ruta real de la foto de Ian
-    #     st.image("ian_foto.jpg", caption="Ian", width=200)
-    # with col2:
-    #     st.markdown(f"""
-    #         - **Carrera:** Ingeniería en Tecnologías Computacionales  
-    #         - **Semestre:** 3er Semestre  
-    #         - **Rol en el Proyecto:** Integración de Hardware & Programador principal
-    #         - "..." """)
-    st.markdown("---")
-
-    st.header("Momentos del Equipo")
-    # --- Foto Grupal ---
-    st.subheader("Equipo en acción")
-    # Reemplaza 'equipo_grupal.jpg' con la ruta real de la foto grupal
-    st.image("equipo_grupal.jpg", caption="El equipo trabajando en SkyMetrics", use_column_width=True)
-    st.markdown("---")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     st.header("Actividades y Cronograma del Proyecto")
-    # --- Imagen de Actividades ---
-    st.subheader("Diagrama de Actividades")
-    # Reemplaza 'actividades_proyecto.png' con la ruta real de la imagen de actividades
-    st.image("actividades_proyecto.png", caption="Visión general de las actividades preliminares del proyecto", use_column_width=True)
-    st.markdown("---")
+    # Quitar comentario cuando tengamos la imagen
+    # st.image("actividades_proyecto.png", caption="Visión general de las actividades preliminares del proyecto", use_column_width=True)
+
+    # Agregar texto en viñetas para las actividades que se realizan (las que hizo pupa regi en el doc de control y seguimiento) 
 
