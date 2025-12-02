@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import folium
 
 from streamlit_folium import st_folium
-import db
+from db import get_latest_data
 from secciones import nav_button, render_skymetrics, render_inicio, render_calendario, render_inicio, render_calendario, render_modelo_er, render_equipo
 from datetime import date, timedelta
 
@@ -41,7 +41,7 @@ st.sidebar.title("Navegación")
 
 # --- INICIALIZAR PÁGINA ---
 if "page" not in st.session_state:
-    st.session_state.page = "SkyMetrics"
+    st.session_state.page = "Equipo"
 
 
 # --- BOTONES DEL MENÚ ---

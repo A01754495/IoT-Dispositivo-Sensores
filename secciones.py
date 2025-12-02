@@ -4,8 +4,9 @@ import pandas as pd
 import folium
 
 from streamlit_folium import st_folium
-from db import get_latest_data, get_sensor_locations, get_connection, get_measured_data, get_average, get_mode, get_min, get_max
+from db import get_latest_data, get_sensor_locations, get_connection, get_measured_data, get_average, get_mode, get_min, get_max, get_measured_data_castdatetime
 from folium.features import DivIcon
+from folium.plugins import MarkerCluster
 from datetime import date, timedelta
 
 # --- NAVEGACIÓN BOTONES ---
@@ -20,73 +21,121 @@ def render_skymetrics():
     st.title("📡 SkyMetrics")
     st.write("Bienvenido al panel principal")
 
-    ## Gráficas de ejemplo (luego conectamos SQL por fechas)
-    st.markdown("### 📈 Gráficas de sensores")
+    st.markdown("### Gráficas de PowerBI")
     st.markdown("---")
 
-    ## Mapa
-    st.markdown("### 🌍 Mapa de sensores")
+    st.markdown("### Mapa de sensores")
 
     sensors = get_sensor_locations()
-    if not sensors: 
-        st.warning("No hay ubicaciones")
-        return 
-    
-    # Centrar mapa en la primera posición
-    first = sensors[0]
-    m = folium.Map(location=[first["lat"], first["lon"]], zoom_start=13)
+    if not sensors:
+        st.warning("No hay ubicaciones registradas.")
+        return
 
-    # LISTA de coordenadas para dibujar la ruta
+    # Centrar mapa en el primer sensor
+    first = sensors[0]
+    m = folium.Map(
+        location=[first["lat"], first["lon"]],
+        zoom_start=16,
+        tiles="cartodbpositron"
+    )
+
     route = []
 
     for s in sensors:
         route.append([s["lat"], s["lon"]])
 
+        icon_html = """
+        <div style='
+            background-color:#58A6FF;
+            width:38px; height:38px;
+            border-radius:50%;
+            display:flex; 
+            align-items:center; 
+            justify-content:center;
+            font-size:22px; 
+            color:white;
+            border:2px solid white;
+            box-shadow:0 0 6px #58A6FFAA;
+        '>📡</div>
+        """
+
         folium.Marker(
-            [s["lat"], s["lon"]],
-            popup=f"""
-                <b>Sensor:</b> {s['id_sensor']}<br>
-                <b>Lat:</b> {s['lat']}<br>
-                <b>Lon:</b> {s['lon']}<br>
-            """,
-            icon=DivIcon(
-                icon_size=(40,40),
-                icon_anchor=(20,20),
-                html=f'''
-                <div style="
-                    background-color:#003333;
-                    width:40px;
-                    height:40px;
-                    border-radius:50%;
-                    display:flex;
-                    align-items:center;
-                    justify-content:center;
-                    font-size:22px;
-                    color:white;
-                    box-shadow:0px 0px 8px #1F6FEBAA;
-                    border:2px solid white;
-                ">
-                    📡
-                </div>
-                '''
-            )
+            location=[s["lat"], s["lon"]],
+            popup=f"<b>Sensor:</b> {s['id_sensor']}<br><b>Lugar:</b> {s['desc']}",
+            icon=DivIcon(html=icon_html, icon_size=(40,40), icon_anchor=(20,20))
         ).add_to(m)
 
-    # DIBUJAR RUTA EN EL MAPA
-    folium.PolyLine(
-        route,
-        color="purple",
-        weight=4,
-        opacity=0.8
-    ).add_to(m)
+    if len(route) > 1:
+        folium.PolyLine(
+            route, color="#58A6FF", weight=3, opacity=0.8
+        ).add_to(m)
 
     st_folium(m, width=900, height=500)
 
 
+
 # --- SECCIÓN DESCRIPCIÓN ---
 def render_inicio():
-    st.title("Descripción")
-    st.write("Página de bienvenida del sistema.")
+    st.title("Descripción del proyecto")
+
+    # --- DESCRIPCIÓN ---#
+    st.subheader("**¿En qué consiste?**")
+    col1, col2 = st.columns([2, 1]) # izquieda más grande que la derecha 
+    with col1: 
+        st.markdown(""" Este proyecto consiste en diseñar e implementar un sistema para la adquisición, procesamiento y
+                visualización de datos amientales en tiempo real, utilizando una estación de monitoreo basadas 
+                en el microcontrolador ESP32. La estación estará equipada como 2 sensores capaces de registrar 
+                la temperatura, humedad y concentración de gases. La información recolectada será enviada mediante 
+                conexión WiFi a una base de datos MySQL, encargada de almacenar y organizar los datos generados.""")
+        st.markdown("""Además, se desarrolló una interfaz de usuario que permita visualizar los registros de manera clara
+                e intuitiva, optimizando la comprensión y el acceso a la información desde computadoras y dispositivos móviles.""")
+        st.subheader("**Necesidad**")
+        st.markdown(""" Este proyecto consiste en diseñar e implementar un sistema para la adquisición, procesamiento y
+                visualización de datos amientales en tiempo real, utilizando una estación de monitoreo basadas 
+                en el microcontrolador ESP32. La estación estará equipada como 2 sensores capaces de registrar 
+                la temperatura, humedad y concentración de gases. La información recolectada será enviada mediante 
+                conexión WiFi a una base de datos MySQL, encargada de almacenar y organizar los datos generados.""")
+    with col2: 
+        st.image("estacion.jpg", caption = "Estación meteorológica Equipo 1", width=350)
+
+    
+    st.subheader("**Beneficios**")
+    st.markdown("""- Adquirir comprensión integral del proceso que implica el diseño y la implementación de una base de datos funcional.
+- Reforzar las habilidades en programación, gestión de datos, conexión de hardware, análisis de información en tiempo real, 
+trabajo en equipo y organización de proyectos
+- Entendimiento profundo sobre el uso de tecnologías de diversas áreas, trabajando en conjunto para crear aplicaciones funcionales
+- Fomentar la conciencia sobre la importancia de la calidad de aire y el impacto del entorno en la vida cotidiana""")
+    
+    st.subheader("**Recursos Materiales**")
+    st.markdown("""- Computadoras con sistema operativo de uso general como Windows, MacOS o Linux
+- ESP32
+- Sensores DHT11 (humedad y temperatura) y MQ2 (gases)
+- Componentes electrónicos (jumpers, cables, protoboard y pila)
+- Contenedor acrílico para resguardar la estación meteorológica """)
+    col1, col2 = st.columns([1, 2]) # izquieda más grande que la derecha 
+    with col1: 
+        st.subheader("**Recursos Digitales**")
+        st.markdown("""- Software Arduino, junto con sus bibliotecas y controladores para el ESP32 y los sensores
+- Software XAMPP
+- Implementación del lenguaje de programación Python y algún editor/IDE que soporte notebooks Jupyter
+- Licencias de estudiante de Microsoft Power BI
+- Software de administración de proyectos como GanttProject
+- Accesibilidad a servidores de base de datos
+- Servicio de procesamiento de eventos (Azure Event Hubs)""")
+        
+    with col2: 
+        st.image("rec_digitales.png", width=900)
+    
+    st.subheader("**Tabla de Inversión**")
+    costos = {
+        "Componente": ["Kit de electrónica", "ESP32", "Batería recargable", "Contenedor de acrílico"],
+        "Costo $MXN (IVA incluido)": [954, 184, 159, 200]
+    }
+
+    df_costos = pd.DataFrame(costos) #organización de datos en filas y columnas 
+    st.dataframe(df_costos, hide_index=True, width=600) #tabla interactiva y no muestra los índices
+
+    st.markdown("""**Total de inversión aproximada:** $1,865 MXN (IVA incluido)""")
 
 
 # --- SECCIÓN CALENDARIO ---
@@ -119,76 +168,103 @@ def render_calendario():
 
     st.markdown("---")
 
-    # --- Obtener datos desde la DB ---
-    df = get_measured_data(fecha_inicio, fecha_fin)
+    # 1. CAMBIO CRUCIAL: Usar la función que devuelve el DATETIME ya unido
+    df = get_measured_data_castdatetime(fecha_inicio, fecha_fin) 
+    
     if df.empty:
         st.warning("No hay registros para la fecha o rango seleccionado.")
         return
 
-    # Ordenar por fecha y hora
-    df = df.sort_values(["fecha", "hora"]).reset_index(drop=True)
-
-    # 1. Asegurar que 'fecha' se interprete como objeto datetime.date
-    #    Si la DB devuelve un Timedelta o cadena extraña, esto la limpia a un objeto de fecha/hora.
-    #    Usamos errors='coerce' por si hay algún valor nulo o inválido en la DB, aunque no es ideal.
-    df["fecha"] = pd.to_datetime(df["fecha"], errors='coerce').dt.normalize()
-    
-    # 2. Crear la columna datetime para gráficas. 
-    #    Usamos .dt.strftime() para obtener una cadena de FECHA limpia ('YYYY-MM-DD').
-    #    Esto evita que se añadan los indeseados '0 days' o residuos de Timedelta.
-    fecha_str = df["fecha"].dt.strftime('%Y-%m-%d')
-    hora_str = df["hora"].astype(str)
-    
-    # 3. Combina y convierte la cadena resultante a un objeto datetime final
-    df["fecha_hora"] = pd.to_datetime(fecha_str + " " + hora_str)
-
-    st.subheader("🌡️ Temperatura")
-    st.line_chart(df.set_index("fecha_hora")["temp"])
-    
-    st.subheader("💧 Humedad")
-    st.line_chart(df.set_index("fecha_hora")["humedad"])
-    
-    st.subheader("🧪 Gas")
-    st.line_chart(df.set_index("fecha_hora")["gas"])
-
-    st.markdown("---")
-
-    # --- Calcular estadísticas ---
+        # --- Calcular estadísticas ---
     avg = get_average(df)
     mode = get_mode(df)
     minv = get_min(df)
     maxv = get_max(df)
 
-    st.subheader("📊 Estadísticas del periodo seleccionado")
+    st.subheader("Estadísticas")
 
-    # --- Tarjetas en fila de 4 columnas ---
-    col_prom, col_moda, col_min, col_max = st.columns(4)
+    # --- LEYENDA DE COLORES ---
+    legend_html = f"""
+    <div style="font-size: 14px; margin-top: -10px; margin-bottom: 20px;">
+        <span class='legend-box metric-temp'></span> Temperatura
+        <span class='legend-box metric-humedad'></span> Humedad
+        <span class='legend-box metric-gas'></span> Gas
+    </div>
+    """
+    st.markdown(legend_html, unsafe_allow_html=True)
 
-    # Promedio
-    with col_prom:
-        st.metric("🌡️ Temp Promedio", f"{avg['temp']} °C")
-        st.metric("💧 Humedad Promedio", f"{avg['humedad']} %")
-        st.metric("🧪 Gas Promedio", f"{avg['gas']} ppm")
+    # 2. Promedio (Fila 1)
+    st.markdown("#### Promedio")
+    # 1. Definir 3 Columnas: Temperatura, Humedad, Gas
+    col_temp, col_humedad, col_gas = st.columns(3)
+    # 2. Asignamos la métrica a cada columna
+    with col_temp:
+    # Usamos la clase CSS 'metric-temp'
+        st.markdown(f'<div class="metric-container metric-temp"><div class="metric-value">{avg["temp"]:.2f} °C</div></div>', unsafe_allow_html=True)
+    with col_humedad:
+        # Usamos la clase CSS 'metric-humedad'
+        st.markdown(f'<div class="metric-container metric-humedad"><div class="metric-value">{avg["humedad"]:.2f} %</div></div>', unsafe_allow_html=True)
+    with col_gas:
+        # Usamos la clase CSS 'metric-gas'
+        st.markdown(f'<div class="metric-container metric-gas"><div class="metric-value">{avg["gas"]:.2f} ppm</div></div>', unsafe_allow_html=True)
+        
 
-    # Moda
-    with col_moda:
-        st.metric("🌡️ Temp Moda", f"{mode['temp']} °C")
-        st.metric("💧 Humedad Moda", f"{mode['humedad']} %")
-        st.metric("🧪 Gas Moda", f"{mode['gas']} ppm")
+    st.markdown("#### Moda")
+    # Redefinimos las columnas para cada operación para asegurar la alineación, 
+    # aunque es un poco redundante, es la forma más segura en Streamlit.
+    col_temp, col_humedad, col_gas = st.columns(3) 
 
-    # Mínimo
-    with col_min:
-        st.metric("🌡️ Temp Mínimo", f"{minv['temp']} °C")
-        st.metric("💧 Humedad Mínimo", f"{minv['humedad']} %")
-        st.metric("🧪 Gas Mínimo", f"{minv['gas']} ppm")
+    with col_temp:
+        st.markdown(f'<div class="metric-container metric-temp"><div class="metric-value">{mode["temp"]} °C</div></div>', unsafe_allow_html=True)
+    with col_humedad:
+        st.markdown(f'<div class="metric-container metric-humedad"><div class="metric-value">{mode["humedad"]} %</div></div>', unsafe_allow_html=True)
+    with col_gas:
+        st.markdown(f'<div class="metric-container metric-gas"><div class="metric-value">{mode["gas"]} ppm</div></div>', unsafe_allow_html=True)
+        
 
-    # Máximo
-    with col_max:
-        st.metric("🌡️ Temp Máximo", f"{maxv['temp']} °C")
-        st.metric("💧 Humedad Máximo", f"{maxv['humedad']} %")
-        st.metric("🧪 Gas Máximo", f"{maxv['gas']} ppm")
+    st.markdown("#### Mínimo")
+    col_temp, col_humedad, col_gas = st.columns(3) 
+
+    with col_temp:
+        st.markdown(f'<div class="metric-container metric-temp"><div class="metric-value">{minv["temp"]:.2f} °C</div></div>', unsafe_allow_html=True)
+    with col_humedad:
+        st.markdown(f'<div class="metric-container metric-humedad"><div class="metric-value">{minv["humedad"]:.2f} %</div></div>', unsafe_allow_html=True)
+    with col_gas:
+        st.markdown(f'<div class="metric-container metric-gas"><div class="metric-value">{minv["gas"]:.2f} ppm</div></div>', unsafe_allow_html=True)
 
 
+    st.markdown("#### Máximo")
+    col_temp, col_humedad, col_gas = st.columns(3) 
+
+    with col_temp:
+        st.markdown(f'<div class="metric-container metric-temp"><div class="metric-value">{maxv["temp"]:.2f} °C</div></div>', unsafe_allow_html=True)
+    with col_humedad:
+        st.markdown(f'<div class="metric-container metric-humedad"><div class="metric-value">{maxv["humedad"]:.2f} %</div></div>', unsafe_allow_html=True)
+    with col_gas:
+        st.markdown(f'<div class="metric-container metric-gas"><div class="metric-value">{maxv["gas"]:.2f} ppm</div></div>', unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # 2. SIMPLIFICACIÓN: La columna ya viene limpia y combinada como 'fechaHora'.
+    # Solo la establecemos como índice para los gráficos.
+    df_plot = df.set_index("fechaHora")
+    st.subheader("Gráficas")
+
+    col_temp, col_humedad, col_gas = st.columns(3) 
+    with col_temp: 
+        st.markdown("#### Temperatura")
+        st.line_chart(df.set_index("fechaHora")["temp"])
+    
+    with col_humedad:
+        st.markdown("#### Humedad")
+        st.line_chart(df.set_index("fechaHora")["humedad"])
+    
+    with col_gas:
+        st.markdown("#### Gas")
+        st.line_chart(df.set_index("fechaHora")["gas"])
+
+
+    
 # --- SECCIÓN MODELO E-R ---
 def render_modelo_er():
     st.title("Modelo E-R")
@@ -201,48 +277,62 @@ def render_equipo():
     st.write("Conoce a los miembros detrás de este proyecto y sus contribuciones")
     st.markdown("---")
 
-    st.header("Integrantes del Proyecto")
-
+    col_cam, col_regi, col_ia = st.columns(3) 
     # --- Miembro 1: Camila ---
-    st.subheader("Camila Trejo")
-    col1, col2 = st.columns([1, 2]) # Columna para imagen y otra para texto
-    with col1:
-        # Reemplaza 'camila_foto.jpg' con la ruta real de la foto de Camila
-        st.image("camila_foto.jpg", caption="Camila", width=200)
-    with col2:
-        st.markdown(""""
-            - **Carrera:** Ingeniería en Robótica y Sistemas Digitales  
-            - **Semestre:** 3er Semestre  
-            - **Rol en el Proyecto:** Líder y Desarrolladora Backend
-            - "..." """)
+    with col_cam: 
+        st.subheader("Camila Trejo")
+        
+        # 🚨 SOLUCIÓN: Contenedor para CENTRAR todos los elementos
+        st.markdown('<div style="text-align: center;">', unsafe_allow_html=True)
+        
+        # 1. Muestra la imagen (se centra dentro del <div>)
+        st.image("camila_.jpg", caption=None, width=200)
+
+        # 2. Muestra el texto formateado (el caption)
+        # Usamos HTML para los saltos de línea y el centrado se aplica al <div> padre.
+        caption_html = f"""
+        <div style="font-size: 14px; margin-top: 5px;">
+            <b>Carrera:</b> IRS <br>
+            <b>Semestre:</b> 3er Semestre <br>
+            <b>Rol:</b> Líder y Desarrolladora Frontend <br> 
+            <b>"..."</b>
+        </div>
+        """
+        st.markdown(caption_html, unsafe_allow_html=True)
+        
+        # Cierre del contenedor de centrado
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    # --- Miembro 2 y 3 (seguirían el mismo patrón de centrado) ---
+
     st.markdown("---")
 
     # --- Miembro 2: Regina ---
-    st.subheader("Regina Hernández")
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        # Reemplaza 'regina_foto.jpg' con la ruta real de la foto de Regina
-        st.image("regina_foto.jpg", caption="Regina", width=200)
-    with col2:
-        st.markdown(f"""
-            - **Carrera:** Ingeniería en Tecnologías Computacionales  
-            - **Semestre:** 3er Semestre  
-            - **Rol en el Proyecto:** Integración de Hardware y Análisis de Datos
-            - "..." """)
-    st.markdown("---")
+    # st.subheader("Regina Hernández")
+    # col1, col2 = st.columns([1, 2])
+    # with col1:
+    #     # Reemplaza 'regina_foto.jpg' con la ruta real de la foto de Regina
+    #     st.image("regina_foto.jpg", caption="Regina", width=200)
+    # with col2:
+    #     st.markdown(f"""
+    #         - **Carrera:** Ingeniería en Tecnologías Computacionales  
+    #         - **Semestre:** 3er Semestre  
+    #         - **Rol en el Proyecto:** Integración de Hardware y Análisis de Datos
+    #         - "..." """)
+    # st.markdown("---")
 
-    # --- Miembro 3: Ian ---
-    st.subheader("Ian Morgado")
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        # Reemplaza 'ian_foto.jpg' con la ruta real de la foto de Ian
-        st.image("ian_foto.jpg", caption="Ian", width=200)
-    with col2:
-        st.markdown(f"""
-            - **Carrera:** Ingeniería en Tecnologías Computacionales  
-            - **Semestre:** 3er Semestre  
-            - **Rol en el Proyecto:** Integración de Hardware & Programador principal
-            - "..." """)
+    # # --- Miembro 3: Ian ---
+    # st.subheader("Ian Morgado")
+    # col1, col2 = st.columns([1, 2])
+    # with col1:
+    #     # Reemplaza 'ian_foto.jpg' con la ruta real de la foto de Ian
+    #     st.image("ian_foto.jpg", caption="Ian", width=200)
+    # with col2:
+    #     st.markdown(f"""
+    #         - **Carrera:** Ingeniería en Tecnologías Computacionales  
+    #         - **Semestre:** 3er Semestre  
+    #         - **Rol en el Proyecto:** Integración de Hardware & Programador principal
+    #         - "..." """)
     st.markdown("---")
 
     st.header("Momentos del Equipo")

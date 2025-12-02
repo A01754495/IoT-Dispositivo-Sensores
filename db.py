@@ -7,9 +7,9 @@ from collections import defaultdict
 def get_connection():
     return mysql.connector.connect(
         host="localhost", 
-        user="esp32",
-        password="ESP32-IoT-equipo1",
-        database="Reto"
+        user="root",
+        password="",
+        database="reto2"
     )
 
 
@@ -37,28 +37,36 @@ def get_sensor_locations():
     
     cursor.execute("""
         SELECT idSensor, coordenadas AS coord, descripcion AS "desc" FROM sensor
-            INNER JOIN lugar on sensor.idLugar = lugar.idLugar; 
+            INNER JOIN lugar ON sensor.idLugar = lugar.idLugar; 
     """)
 
     rows = cursor.fetchall()
     conn.close()
 
-    sensors = defaultdict(list)
+    sensors_list = []
+
     for row in rows:
-        if 'idSensor' in row and 'coord' in row and 'desc' in row:
-            sensors[row['idSensor']].append({
-                "coord": row['coord'], 
+        # La columna 'coordenadas' tiene el formato "latitud, longitud" (ej: "19.597..., -99.277...")
+        # Debemos separar esta cadena en dos números flotantes
+        try:
+            # Asegúrate de que las coordenadas se separen por coma y espacio, o solo coma
+            lat_str, lon_str = row['coord'].split(',')
+            lat = float(lat_str.strip()) # strip() elimina espacios innecesarios
+            lon = float(lon_str.strip())
+            
+            sensors_list.append({
+                "id_sensor": row['idSensor'],
+                "lat": lat,
+                "lon": lon,
                 "desc": row['desc']
             })
-        else:
-            print(f"ERROR en la recuperación del lugar!")
+        except Exception as e:
+            # Manejo de error si el formato de coordenadas es incorrecto
+            print(f"Error al procesar coordenadas para Sensor {row.get('idSensor', 'N/A')}: {row['coordenadas']} -> {e}")
+            continue
 
-    # Regresa un diccionario con las llaves del idSensor, ligadas a una lista de
-    # diccionarios con llaves coord y desc
-
-    # Ejemplo de cómo recuperar los datos: get_sensor_locations()[0][0]['coord'];
-    # [0] es la llave idSensor, [0] es el índice al de la lista, ['coord'] es la llave de las coordenadas
-    return dict(sensors)
+    # Regresa una lista simple de diccionarios, mucho más fácil de iterar
+    return sensors_list
 
 # --- OBTENER MEDICIONES EN RANGO DE FECHAS ---
 def get_measured_data(fromDate, toDate):
@@ -72,11 +80,11 @@ def get_measured_data(fromDate, toDate):
     #toDate = date(int(toDate[0]), int(toDate[1]), int(toDate[2]))
 
     query = ("""
-        SELECT Registro_temp.fecha, Registro_temp.hora, medida_temp AS temp, medida_humedad AS humedad, medida_gas AS gas FROM Registro_temp
-            INNER JOIN Registro_humedad on Registro_humedad.fecha = Registro_temp.fecha AND Registro_humedad.hora = Registro_temp.hora
-            INNER JOIN Registro_gas on Registro_temp.fecha = Registro_gas.fecha AND Registro_temp.hora = Registro_gas.hora
-            WHERE Registro_temp.fecha BETWEEN %s AND %s
-            ORDER BY Registro_temp.fecha ASC, Registro_temp.hora ASC;
+        SELECT registro_temp.fecha, registro_temp.hora, medida_temp AS temp, medida_humedad AS humedad, medida_gas AS gas FROM registro_temp
+            INNER JOIN registro_humedad on registro_humedad.fecha = registro_temp.fecha AND registro_humedad.hora = registro_temp.hora
+            INNER JOIN registro_gas on registro_temp.fecha = registro_gas.fecha AND registro_temp.hora = registro_gas.hora
+            WHERE registro_temp.fecha BETWEEN %s AND %s
+            ORDER BY registro_temp.fecha ASC, registro_temp.hora ASC;
     """)
     try:
         cursor.execute(query, (fromDate, toDate))
@@ -98,12 +106,12 @@ def get_measured_data_castdatetime(fromDate, toDate):
     toDate = toDate.strftime("%Y-%m-%d")
 
     query = ("""
-        SELECT STR_TO_DATE(CONCAT(Registro_temp.fecha, ' ', Registro_temp.hora), '%Y-%m-%d %H:%i:%s') AS fechaHora,
-            medida_temp AS temp, medida_humedad AS humedad, medida_gas AS gas FROM Registro_temp
-            INNER JOIN Registro_humedad on Registro_humedad.fecha = Registro_temp.fecha AND Registro_humedad.hora = Registro_temp.hora
-            INNER JOIN Registro_gas on Registro_temp.fecha = Registro_gas.fecha AND Registro_temp.hora = Registro_gas.hora
-            WHERE Registro_temp.fecha BETWEEN '{0}' AND '{1}'
-            ORDER BY Registro_temp.fecha ASC, Registro_temp.hora ASC;
+        SELECT STR_TO_DATE(CONCAT(registro_temp.fecha, ' ', registro_temp.hora), '%Y-%m-%d %H:%i:%s') AS fechaHora,
+            medida_temp AS temp, medida_humedad AS humedad, medida_gas AS gas FROM registro_temp
+            INNER JOIN registro_humedad on registro_humedad.fecha = registro_temp.fecha AND registro_humedad.hora = registro_temp.hora
+            INNER JOIN registro_gas on registro_temp.fecha = registro_gas.fecha AND registro_temp.hora = registro_gas.hora
+            WHERE registro_temp.fecha BETWEEN '{0}' AND '{1}'
+            ORDER BY registro_temp.fecha ASC, registro_temp.hora ASC;
     """).format(fromDate, toDate)
 
     try:
